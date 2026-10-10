@@ -20,7 +20,7 @@ class GitCommandConverterTool {
                 else -> "export $name=\"$value\""
             }
         }
-        val assignment = Regex("""^${'.matchEntire(input)
+        val assignment = Regex("""^${'$'}env:([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(.*)$""").matchEntire(input)
         if (assignment != null) {
             val name = assignment.groupValues[1]
             val value = unquote(assignment.groupValues[2])
@@ -36,7 +36,7 @@ class GitCommandConverterTool {
             val value = unquote(fishSet.groupValues[2])
             return when (target) {
                 "bash" -> "export $name=\"$value\""
-                "powershell" -> "$" + "env:$name = \"$value\""
+                "powershell" -> "\$env:$name = \"$value\""
                 else -> input
             }
         }
@@ -93,7 +93,7 @@ class GitCommandConverterTool {
             val value = unquote(fishSet.groupValues[2])
             return when (target) {
                 "bash" -> "export $name=\"$value\""
-                "powershell" -> "$" + "env:$name = \"$value\""
+                "powershell" -> "\$env:$name = \"$value\""
                 else -> input
             }
         }
