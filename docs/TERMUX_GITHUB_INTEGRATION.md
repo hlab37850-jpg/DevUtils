@@ -10,7 +10,7 @@ This feature is being introduced on `feature/termux-github-control`; it does not
    if grep -q '^allow-external-apps' ~/.termux/termux.properties 2>/dev/null; then
      sed -i 's/^allow-external-apps.*/allow-external-apps = true/' ~/.termux/termux.properties
    else
-     printf '\\nallow-external-apps = true\\n' >> ~/.termux/termux.properties
+     printf '\nallow-external-apps = true\n' >> ~/.termux/termux.properties
    fi
    ```
 3. Fully close and reopen Termux.
