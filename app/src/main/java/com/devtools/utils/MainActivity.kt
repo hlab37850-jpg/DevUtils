@@ -678,12 +678,6 @@ class MainActivity : AppCompatActivity() {
             }.show()
     }
 
-    private fun copyToClipboard(value: String) {
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("DevUtils", value))
-        toast("تم نسخ النتيجة")
-    }
-
     private fun showToolMode(checkedId: Int) {
         val isJson = checkedId == R.id.rbJson
         val isBase64 = checkedId == R.id.rbBase64
