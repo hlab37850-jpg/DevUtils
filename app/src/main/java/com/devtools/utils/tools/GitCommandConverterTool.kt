@@ -35,7 +35,7 @@ class GitCommandConverterTool {
             val name = fishSet.groupValues[1]
             val value = unquote(fishSet.groupValues[2])
             return when (target) {
-                "bash" -> "set -gx $name \"$value\""
+                "bash" -> "export $name=\"$value\""
                 "powershell" -> "$" + "env:$name = \"$value\""
                 else -> input
             }
