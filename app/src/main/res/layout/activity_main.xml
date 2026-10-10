@@ -98,6 +98,34 @@
                 android:paddingEnd="12dp" />
 
             <RadioButton
+                android:id="@+id/rbCommitMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="مولد Commit"
+                android:paddingEnd="12dp" />
+
+            <RadioButton
+                android:id="@+id/rbGitCommand"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="محول Git Commands"
+                android:paddingEnd="12dp" />
+
+            <RadioButton
+                android:id="@+id/rbGitignore"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="مولد .gitignore"
+                android:paddingEnd="12dp" />
+
+            <RadioButton
+                android:id="@+id/rbDateDiff"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="حاسبة التواريخ"
+                android:paddingEnd="12dp" />
+
+            <RadioButton
                 android:id="@+id/rbDuplicateRemover"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -131,6 +159,37 @@
     </LinearLayout>
     <LinearLayout android:id="@+id/llMockActions" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone" android:layout_marginBottom="8dp">
         <Button android:id="@+id/btnGenerateMock" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="توليد بيانات" />
+    </LinearLayout>
+
+
+    <LinearLayout android:id="@+id/llCommitInputs" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone" android:layout_marginBottom="8dp">
+        <Spinner android:id="@+id/spCommitType" android:layout_width="match_parent" android:layout_height="wrap_content" android:entries="@array/commit_types" />
+        <EditText android:id="@+id/etCommitScope" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Scope اختياري، مثل auth" android:singleLine="true" android:inputType="text" />
+        <EditText android:id="@+id/etCommitDescription" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="وصف مختصر للتغيير (مطلوب)" android:singleLine="true" android:inputType="textCapSentences" />
+        <EditText android:id="@+id/etCommitBody" android:layout_width="match_parent" android:layout_height="76dp" android:gravity="top|start" android:hint="تفاصيل إضافية اختيارية" android:inputType="textMultiLine" />
+        <Button android:id="@+id/btnGenerateCommit" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="توليد رسالة Commit" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/llGitCommandInputs" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone" android:layout_marginBottom="8dp">
+        <EditText android:id="@+id/etGitCommand" android:layout_width="match_parent" android:layout_height="76dp" android:gravity="top|start" android:hint="أدخل الأمر المراد تحويله..." android:inputType="textMultiLine" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="من:" />
+        <Spinner android:id="@+id/spShellFrom" android:layout_width="match_parent" android:layout_height="wrap_content" android:entries="@array/shell_types" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="إلى:" />
+        <Spinner android:id="@+id/spShellTo" android:layout_width="match_parent" android:layout_height="wrap_content" android:entries="@array/shell_types" />
+        <Button android:id="@+id/btnConvertGitCommand" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="تحويل الأمر" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/llGitignoreInputs" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone" android:layout_marginBottom="8dp">
+        <Spinner android:id="@+id/spGitignoreType" android:layout_width="match_parent" android:layout_height="wrap_content" android:entries="@array/project_types" />
+        <Button android:id="@+id/btnGenerateGitignore" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="توليد .gitignore" />
+        <Button android:id="@+id/btnCopyGitignore" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="نسخ .gitignore" style="?attr/materialButtonOutlinedStyle" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/llDateDiffInputs" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone" android:layout_marginBottom="8dp">
+        <EditText android:id="@+id/etStartDate" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="تاريخ البداية YYYY-MM-DD" android:inputType="date" android:singleLine="true" />
+        <EditText android:id="@+id/etEndDate" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="تاريخ النهاية YYYY-MM-DD" android:inputType="date" android:singleLine="true" />
+        <Button android:id="@+id/btnCalculateDateDiff" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="حساب الفرق" />
+        <TextView android:id="@+id/tvDiffYears" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="السنوات: —" android:padding="4dp" />
+        <TextView android:id="@+id/tvDiffMonths" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="الأشهر: —" android:padding="4dp" />
+        <TextView android:id="@+id/tvDiffDays" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="الأيام: —" android:padding="4dp" />
+        <TextView android:id="@+id/tvDiffTotalDays" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="إجمالي الأيام: —" android:padding="4dp" />
     </LinearLayout>
 
     <EditText

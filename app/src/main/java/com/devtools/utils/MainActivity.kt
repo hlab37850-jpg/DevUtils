@@ -16,6 +16,10 @@ import kotlin.coroutines.resume
 import androidx.appcompat.app.AppCompatActivity
 import com.devtools.utils.databinding.ActivityMainBinding
 import com.devtools.utils.tools.CaseConverterTool
+import com.devtools.utils.tools.CommitMessageTool
+import com.devtools.utils.tools.GitCommandConverterTool
+import com.devtools.utils.tools.GitignoreGeneratorTool
+import com.devtools.utils.tools.DateDiffCalculatorTool
 import com.devtools.utils.tools.DuplicateRemoverTool
 import com.devtools.utils.tools.HttpTool
 import com.devtools.utils.tools.JwtTool
@@ -39,6 +43,10 @@ class MainActivity : AppCompatActivity() {
     private val httpTool = HttpTool()
     private val jwtTool = JwtTool()
     private val mockDataTool = MockDataTool()
+    private val commitMessageTool = CommitMessageTool()
+    private val gitCommandConverterTool = GitCommandConverterTool()
+    private val gitignoreGeneratorTool = GitignoreGeneratorTool()
+    private val dateDiffCalculatorTool = DateDiffCalculatorTool()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -248,6 +256,74 @@ class MainActivity : AppCompatActivity() {
             toast("تم توليد بيانات تجريبية")
         }
 
+
+        // Phase 4: Conventional Commit message generator.
+        binding.btnGenerateCommit.setOnClickListener {
+            try {
+                binding.etOutput.text = commitMessageTool.generateCommitMessage(
+                    type = binding.spCommitType.selectedItem.toString(),
+                    scope = binding.etCommitScope.text.toString(),
+                    description = binding.etCommitDescription.text.toString(),
+                    body = binding.etCommitBody.text.toString()
+                )
+                toast("تم توليد رسالة Commit")
+            } catch (e: IllegalArgumentException) {
+                binding.etOutput.text = "تعذر توليد الرسالة: ${e.message.orEmpty()}"
+                toast(e.message ?: "تحقق من بيانات Commit")
+            } catch (e: Exception) {
+                toast("حدث خطأ أثناء توليد رسالة Commit")
+            }
+        }
+
+        binding.btnConvertGitCommand.setOnClickListener {
+            try {
+                binding.etOutput.text = gitCommandConverterTool.convertCommand(
+                    command = binding.etGitCommand.text.toString(),
+                    fromShell = binding.spShellFrom.selectedItem.toString(),
+                    toShell = binding.spShellTo.selectedItem.toString()
+                )
+                toast("تم تحويل الأمر")
+            } catch (e: IllegalArgumentException) {
+                binding.etOutput.text = "تعذر تحويل الأمر: ${e.message.orEmpty()}"
+                toast(e.message ?: "تعذر تحويل الأمر")
+            } catch (e: Exception) {
+                toast("حدث خطأ أثناء تحويل الأمر")
+            }
+        }
+
+        binding.btnGenerateGitignore.setOnClickListener {
+            try {
+                binding.etOutput.text = gitignoreGeneratorTool.generateGitignore(binding.spGitignoreType.selectedItem.toString())
+                toast("تم توليد قالب .gitignore")
+            } catch (e: IllegalArgumentException) {
+                binding.etOutput.text = "تعذر توليد القالب: ${e.message.orEmpty()}"
+                toast(e.message ?: "نوع مشروع غير صالح")
+            }
+        }
+        binding.btnCopyGitignore.setOnClickListener {
+            val text = binding.etOutput.text.toString()
+            if (text.isBlank()) toast("ولّد قالب .gitignore أولاً") else copyToClipboard(text)
+        }
+
+        binding.btnCalculateDateDiff.setOnClickListener {
+            try {
+                val diff = dateDiffCalculatorTool.calculateDateDiff(
+                    binding.etStartDate.text.toString().trim(),
+                    binding.etEndDate.text.toString().trim()
+                )
+                binding.tvDiffYears.text = "السنوات: ${diff.getValue("years")}"
+                binding.tvDiffMonths.text = "الأشهر: ${diff.getValue("months")}"
+                binding.tvDiffDays.text = "الأيام: ${diff.getValue("days")}"
+                binding.tvDiffTotalDays.text = "إجمالي الأيام: ${diff.getValue("totalDays")}"
+                binding.etOutput.text = "السنوات: ${diff.getValue("years")}\nالأشهر: ${diff.getValue("months")}\nالأيام: ${diff.getValue("days")}\nإجمالي الأيام: ${diff.getValue("totalDays")}"
+                toast("تم حساب الفرق بين التاريخين")
+            } catch (e: IllegalArgumentException) {
+                toast(e.message ?: "تاريخ غير صالح. استخدم YYYY-MM-DD")
+            } catch (e: Exception) {
+                toast("تعذر حساب فرق التاريخين")
+            }
+        }
+
         // Phase 2: remove duplicate lines while preserving first occurrence order.
         binding.btnRemoveDuplicates.setOnClickListener {
             val input = binding.etInput.text.toString()
@@ -278,6 +354,10 @@ class MainActivity : AppCompatActivity() {
         val isHttp = checkedId == R.id.rbHttp
         val isJwt = checkedId == R.id.rbJwt
         val isMockData = checkedId == R.id.rbMockData
+        val isCommitMessage = checkedId == R.id.rbCommitMessage
+        val isGitCommand = checkedId == R.id.rbGitCommand
+        val isGitignore = checkedId == R.id.rbGitignore
+        val isDateDiff = checkedId == R.id.rbDateDiff
 
         binding.tvToolTitle.text = when {
             isBase64 -> "محول Base64"
@@ -291,6 +371,10 @@ class MainActivity : AppCompatActivity() {
             isHttp -> "عميل HTTP"
             isJwt -> "محلل JWT"
             isMockData -> "مولد البيانات الوهمية"
+            isCommitMessage -> "مولد Commit"
+            isGitCommand -> "محول Git Commands"
+            isGitignore -> "مولد .gitignore"
+            isDateDiff -> "حاسبة التواريخ"
             else -> "منسق JSON"
         }
 
@@ -306,7 +390,11 @@ class MainActivity : AppCompatActivity() {
             else -> "ألصق JSON هنا..."
         }
 
-        binding.etInput.visibility = if (isUuid || isHttp || isJwt || isMockData) View.GONE else View.VISIBLE
+        binding.etInput.visibility = if (isUuid || isHttp || isJwt || isMockData || isCommitMessage || isGitCommand || isGitignore || isDateDiff) View.GONE else View.VISIBLE
+        binding.llCommitInputs.visibility = if (isCommitMessage) View.VISIBLE else View.GONE
+        binding.llGitCommandInputs.visibility = if (isGitCommand) View.VISIBLE else View.GONE
+        binding.llGitignoreInputs.visibility = if (isGitignore) View.VISIBLE else View.GONE
+        binding.llDateDiffInputs.visibility = if (isDateDiff) View.VISIBLE else View.GONE
         binding.llHttpInputs.visibility = if (isHttp) View.VISIBLE else View.GONE
         binding.llJwtInputs.visibility = if (isJwt) View.VISIBLE else View.GONE
         binding.llMockActions.visibility = if (isMockData) View.VISIBLE else View.GONE
@@ -335,6 +423,10 @@ class MainActivity : AppCompatActivity() {
             isHttp -> "استجابة HTTP:"
             isJwt -> "Payload (لم يتم التحقق من التوقيع):"
             isMockData -> "البيانات المولدة:"
+            isCommitMessage -> "رسالة Commit:"
+            isGitCommand -> "الأمر المحوّل:"
+            isGitignore -> "محتوى .gitignore:"
+            isDateDiff -> "فرق التاريخين:"
             else -> "النتيجة:"
         }
 

@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">DevUtils</string>
+    <string-array name="commit_types"><item>feat</item><item>fix</item><item>docs</item><item>style</item><item>refactor</item><item>test</item><item>chore</item></string-array>
+    <string-array name="shell_types"><item>Bash</item><item>PowerShell</item><item>Fish</item></string-array>
+    <string-array name="project_types"><item>Android</item><item>Kotlin</item><item>Java</item><item>Python</item><item>Node.js</item><item>React</item><item>Flutter</item></string-array>
 </resources>
