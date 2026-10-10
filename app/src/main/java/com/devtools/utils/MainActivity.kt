@@ -9,10 +9,17 @@ import android.text.TextWatcher
 import android.util.Base64
 import android.view.View
 import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 import androidx.appcompat.app.AppCompatActivity
 import com.devtools.utils.databinding.ActivityMainBinding
 import com.devtools.utils.tools.CaseConverterTool
 import com.devtools.utils.tools.DuplicateRemoverTool
+import com.devtools.utils.tools.HttpTool
+import com.devtools.utils.tools.JwtTool
+import com.devtools.utils.tools.MockDataTool
 import com.devtools.utils.tools.RegexTool
 import com.devtools.utils.tools.WordCounterTool
 import org.json.JSONObject
@@ -29,6 +36,9 @@ class MainActivity : AppCompatActivity() {
     private val wordCounterTool = WordCounterTool()
     private val caseConverterTool = CaseConverterTool()
     private val duplicateRemoverTool = DuplicateRemoverTool()
+    private val httpTool = HttpTool()
+    private val jwtTool = JwtTool()
+    private val mockDataTool = MockDataTool()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -190,6 +200,54 @@ class MainActivity : AppCompatActivity() {
         binding.btnSnakeCase.setOnClickListener { convertCase(CaseConverterTool.SNAKE_CASE) }
         binding.btnPascalCase.setOnClickListener { convertCase(CaseConverterTool.PASCAL_CASE) }
 
+
+        // Phase 3: asynchronous HTTP requests; network I/O stays off the UI thread.
+        binding.btnHttpSend.setOnClickListener {
+            val url = binding.etHttpUrl.text.toString().trim()
+            val method = if (binding.rgHttpMethod.checkedRadioButtonId == R.id.rbHttpPost) "POST" else "GET"
+            val body = binding.etHttpBody.text.toString().takeIf { it.isNotBlank() }
+            if (url.isBlank()) {
+                toast("أدخل رابط URL أولاً")
+                return@setOnClickListener
+            }
+            binding.btnHttpSend.isEnabled = false
+            binding.btnHttpSend.text = "جارٍ الإرسال..."
+            binding.etOutput.text = "جارٍ انتظار استجابة الخادم..."
+            lifecycleScope.launch {
+                try {
+                    val result = suspendCancellableCoroutine<String> { continuation ->
+                        httpTool.executeRequest(url, method, body) { response ->
+                            if (continuation.isActive) continuation.resume(response)
+                        }
+                    }
+                    binding.etOutput.text = result
+                    if (result.startsWith("خطأ الشبكة:")) toast("تعذر الاتصال. تحقق من الإنترنت والرابط.")
+                } catch (e: Exception) {
+                    binding.etOutput.text = "خطأ الشبكة: ${e.message.orEmpty()}"
+                    toast("تعذر الاتصال. تحقق من الإنترنت والرابط.")
+                } finally {
+                    binding.btnHttpSend.isEnabled = true
+                    binding.btnHttpSend.text = "إرسال الطلب"
+                }
+            }
+        }
+
+        // JWT payload decoding only; the token signature is not verified.
+        binding.btnJwtDecode.setOnClickListener {
+            try {
+                binding.etOutput.text = jwtTool.decodeJwt(binding.etJwtToken.text.toString().trim())
+                toast("تم فك Payload بنجاح")
+            } catch (e: Exception) {
+                binding.etOutput.text = "تعذر تحليل JWT: ${e.message.orEmpty()}"
+                toast("JWT غير صالح")
+            }
+        }
+
+        binding.btnGenerateMock.setOnClickListener {
+            binding.etOutput.text = mockDataTool.generateMockData()
+            toast("تم توليد بيانات تجريبية")
+        }
+
         // Phase 2: remove duplicate lines while preserving first occurrence order.
         binding.btnRemoveDuplicates.setOnClickListener {
             val input = binding.etInput.text.toString()
@@ -217,6 +275,9 @@ class MainActivity : AppCompatActivity() {
         val isWordCounter = checkedId == R.id.rbWordCounter
         val isCaseConverter = checkedId == R.id.rbCaseConverter
         val isDuplicateRemover = checkedId == R.id.rbDuplicateRemover
+        val isHttp = checkedId == R.id.rbHttp
+        val isJwt = checkedId == R.id.rbJwt
+        val isMockData = checkedId == R.id.rbMockData
 
         binding.tvToolTitle.text = when {
             isBase64 -> "محول Base64"
@@ -227,6 +288,9 @@ class MainActivity : AppCompatActivity() {
             isWordCounter -> "عداد الكلمات"
             isCaseConverter -> "محول النصوص"
             isDuplicateRemover -> "مزيل التكرارات"
+            isHttp -> "عميل HTTP"
+            isJwt -> "محلل JWT"
+            isMockData -> "مولد البيانات الوهمية"
             else -> "منسق JSON"
         }
 
@@ -242,7 +306,10 @@ class MainActivity : AppCompatActivity() {
             else -> "ألصق JSON هنا..."
         }
 
-        binding.etInput.visibility = if (isUuid) View.GONE else View.VISIBLE
+        binding.etInput.visibility = if (isUuid || isHttp || isJwt || isMockData) View.GONE else View.VISIBLE
+        binding.llHttpInputs.visibility = if (isHttp) View.VISIBLE else View.GONE
+        binding.llJwtInputs.visibility = if (isJwt) View.VISIBLE else View.GONE
+        binding.llMockActions.visibility = if (isMockData) View.VISIBLE else View.GONE
         binding.etRegexPattern.visibility = if (isRegex) View.VISIBLE else View.GONE
         binding.btnFormat.visibility = if (isJson) View.VISIBLE else View.GONE
         binding.llJsonActions.visibility = if (isJson || isBase64) View.VISIBLE else View.GONE
@@ -265,6 +332,9 @@ class MainActivity : AppCompatActivity() {
             isRegex -> "نتائج التطابق:"
             isCaseConverter -> "النص المحوّل:"
             isDuplicateRemover -> "النص بعد إزالة التكرارات:"
+            isHttp -> "استجابة HTTP:"
+            isJwt -> "Payload (لم يتم التحقق من التوقيع):"
+            isMockData -> "البيانات المولدة:"
             else -> "النتيجة:"
         }
 

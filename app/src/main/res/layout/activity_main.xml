@@ -77,6 +77,27 @@
                 android:paddingEnd="12dp" />
 
             <RadioButton
+                android:id="@+id/rbHttp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="عميل HTTP"
+                android:paddingEnd="12dp" />
+
+            <RadioButton
+                android:id="@+id/rbJwt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="محلل JWT"
+                android:paddingEnd="12dp" />
+
+            <RadioButton
+                android:id="@+id/rbMockData"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="بيانات وهمية"
+                android:paddingEnd="12dp" />
+
+            <RadioButton
                 android:id="@+id/rbDuplicateRemover"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -93,6 +114,24 @@
         android:textStyle="bold"
         android:layout_gravity="center"
         android:layout_marginBottom="16dp" />
+
+
+    <LinearLayout android:id="@+id/llHttpInputs" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone" android:layout_marginBottom="8dp">
+        <EditText android:id="@+id/etHttpUrl" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="رابط URL مثل https://httpbin.org/get" android:inputType="textUri" android:singleLine="true" android:padding="8dp" />
+        <RadioGroup android:id="@+id/rgHttpMethod" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <RadioButton android:id="@+id/rbHttpGet" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="true" android:text="GET" />
+            <RadioButton android:id="@+id/rbHttpPost" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="POST" />
+        </RadioGroup>
+        <EditText android:id="@+id/etHttpBody" android:layout_width="match_parent" android:layout_height="88dp" android:gravity="top|start" android:hint="Body اختياري لـ POST (نص أو JSON)" android:inputType="textMultiLine" android:padding="8dp" />
+        <Button android:id="@+id/btnHttpSend" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="إرسال الطلب" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/llJwtInputs" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone" android:layout_marginBottom="8dp">
+        <EditText android:id="@+id/etJwtToken" android:layout_width="match_parent" android:layout_height="88dp" android:gravity="top|start" android:hint="ألصق JWT هنا..." android:inputType="textMultiLine" android:padding="8dp" />
+        <Button android:id="@+id/btnJwtDecode" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="فك التشفير" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/llMockActions" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone" android:layout_marginBottom="8dp">
+        <Button android:id="@+id/btnGenerateMock" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="توليد بيانات" />
+    </LinearLayout>
 
     <EditText
         android:id="@+id/etInput"
