@@ -390,6 +390,7 @@ class MainActivity : AppCompatActivity() {
             "تشغيل أمر في Termux",
             "فتح مستودع DevUtils على GitHub",
             "متابعة بناء APK (GitHub Actions)",
+            "إدارة GitHub داخل التطبيق",
             "تعليمات إعداد الربط"
         )
         AlertDialog.Builder(this)
@@ -400,7 +401,8 @@ class MainActivity : AppCompatActivity() {
                     1 -> showTermuxCommandDialog()
                     2 -> openWebPage("https://github.com/hlab37850-jpg/DevUtils")
                     3 -> openWebPage("https://github.com/hlab37850-jpg/DevUtils/actions")
-                    4 -> showTermuxSetupHelp()
+                    4 -> showGitHubControlDialog()
+                    5 -> showTermuxSetupHelp()
                 }
             }
             .setNegativeButton("إغلاق", null)
@@ -501,6 +503,185 @@ class MainActivity : AppCompatActivity() {
     private fun openWebPage(url: String) {
         runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
             .onFailure { toast("تعذر فتح الرابط: ${it.message.orEmpty()}") }
+    }
+
+    private fun showGitHubControlDialog() {
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(40, 12, 40, 0)
+        }
+        val tokenInput = android.widget.EditText(this).apply {
+            hint = "GitHub token (ghp_… أو fine-grained)"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            setSingleLine(true)
+        }
+        val repoInput = android.widget.EditText(this).apply {
+            hint = "owner/repository"
+            setSingleLine(true)
+            setText("hlab37850-jpg/DevUtils")
+        }
+        val branchInput = android.widget.EditText(this).apply {
+            hint = "اسم الفرع"
+            setSingleLine(true)
+            setText("main")
+        }
+        container.addView(tokenInput)
+        container.addView(repoInput)
+        container.addView(branchInput)
+        AlertDialog.Builder(this)
+            .setTitle("إدارة GitHub")
+            .setMessage("أدخل رمزك داخل التطبيق فقط. لن يحفظه DevUtils. استخدم أقل صلاحيات ممكنة، ولا تشاركه مع أحد.")
+            .setView(container)
+            .setPositiveButton("متابعة") { _, _ ->
+                val token = tokenInput.text.toString().trim()
+                val repository = repoInput.text.toString().trim()
+                val branch = branchInput.text.toString().trim().ifBlank { "main" }
+                if (token.isBlank() || !repository.matches(Regex("[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"))) {
+                    toast("أدخل رمز GitHub واسم مستودع صحيحاً بصيغة owner/repository")
+                } else {
+                    showGitHubActionsMenu(token, repository, branch)
+                }
+            }
+            .setNegativeButton("إلغاء", null)
+            .show()
+    }
+
+    private fun showGitHubActionsMenu(token: String, repository: String, branch: String) {
+        val options = arrayOf(
+            "عرض ملفات المجلد الرئيسي",
+            "عرض آخر عمليات البناء",
+            "تشغيل بناء APK",
+            "قراءة ملف وتعديله ثم Commit"
+        )
+        AlertDialog.Builder(this)
+            .setTitle("GitHub • $repository")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> runGitHubOperation("قراءة ملفات المستودع") {
+                        val files = GitHubControlClient(token).listRoot(repository, branch)
+                        (0 until files.length()).joinToString("\n") { i ->
+                            val item = files.getJSONObject(i)
+                            "${item.optString("type")}  ${item.optString("name")}"
+                        }.ifBlank { "المجلد فارغ." }
+                    }
+                    1 -> runGitHubOperation("آخر عمليات البناء") {
+                        val runs = GitHubControlClient(token).listWorkflowRuns(repository, branch).getJSONArray("workflow_runs")
+                        if (runs.length() == 0) "لا توجد عمليات بناء لهذا الفرع."
+                        else (0 until runs.length()).joinToString("\n\n") { i ->
+                            val run = runs.getJSONObject(i)
+                            "العملية #${run.optInt("run_number")}\\nالحالة: ${run.optString("status")}\\nالنتيجة: ${run.optString("conclusion", "قيد التنفيذ")}\\n${run.optString("html_url")}"
+                        }
+                    }
+                    2 -> AlertDialog.Builder(this)
+                        .setTitle("تشغيل بناء APK")
+                        .setMessage("سيتم طلب تشغيل سير العمل build.yml للفرع $branch. يجب أن يملك الرمز صلاحية Actions write، وأن يكون سير العمل مهيأً للتشغيل اليدوي.")
+                        .setNegativeButton("إلغاء", null)
+                        .setPositiveButton("تشغيل") { _, _ ->
+                            runGitHubOperation("تشغيل بناء APK") {
+                                GitHubControlClient(token).dispatchBuild(repository, branch)
+                                "أُرسل طلب تشغيل البناء. افتح آخر عمليات البناء بعد قليل لمتابعة الحالة."
+                            }
+                        }.show()
+                    3 -> showGitHubFileEditor(token, repository, branch)
+                }
+            }
+            .setNegativeButton("إغلاق", null)
+            .show()
+    }
+
+    private fun runGitHubOperation(title: String, operation: suspend () -> String) {
+        val progress = AlertDialog.Builder(this).setTitle(title).setMessage("جارٍ الاتصال بـ GitHub…").setCancelable(false).create()
+        progress.show()
+        lifecycleScope.launch {
+            val result = runCatching { withContext(Dispatchers.IO) { operation() } }
+            progress.dismiss()
+            result.onSuccess { text ->
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle(title)
+                    .setMessage(text)
+                    .setPositiveButton("نسخ النتيجة") { _, _ -> copyToClipboard(text) }
+                    .setNegativeButton("إغلاق", null)
+                    .show()
+            }.onFailure { error ->
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("تعذر إكمال العملية")
+                    .setMessage(error.message ?: "خطأ غير معروف. تحقق من الشبكة والرمز والصلاحيات.")
+                    .setPositiveButton("حسناً", null)
+                    .show()
+            }
+        }
+    }
+
+    private fun showGitHubFileEditor(token: String, repository: String, branch: String) {
+        val pathInput = android.widget.EditText(this).apply {
+            hint = "مسار الملف، مثال: README.md"
+            setSingleLine(true)
+        }
+        AlertDialog.Builder(this)
+            .setTitle("فتح ملف من GitHub")
+            .setMessage("أدخل مسار ملف نصي. ستظهر نسخة الملف في محرر، ولا يُرفع أي تغيير إلا بعد تأكيدك.")
+            .setView(pathInput)
+            .setNegativeButton("إلغاء", null)
+            .setPositiveButton("فتح") { _, _ ->
+                val path = pathInput.text.toString().trim()
+                if (path.isBlank() || path.startsWith("/") || path.split("/").any { it == ".." }) {
+                    toast("مسار الملف غير صالح")
+                    return@setPositiveButton
+                }
+                val progress = AlertDialog.Builder(this).setTitle("قراءة الملف").setMessage("جارٍ تنزيل الملف…").setCancelable(false).create()
+                progress.show()
+                lifecycleScope.launch {
+                    val result = runCatching {
+                        withContext(Dispatchers.IO) {
+                            val file = GitHubControlClient(token).readTextFile(repository, path, branch)
+                            val encoded = file.optString("content").replace("\n", "")
+                            val decoded = String(android.util.Base64.decode(encoded, android.util.Base64.DEFAULT), Charsets.UTF_8)
+                            Triple(file.getString("sha"), decoded, file.optString("name", path))
+                        }
+                    }
+                    progress.dismiss()
+                    result.onSuccess { (sha, original, name) ->
+                        val editor = android.widget.EditText(this@MainActivity).apply {
+                            setText(original)
+                            minLines = 8
+                            gravity = android.view.Gravity.TOP or android.view.Gravity.START
+                            typeface = android.graphics.Typeface.MONOSPACE
+                            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+                        }
+                        AlertDialog.Builder(this@MainActivity)
+                            .setTitle("تحرير $name")
+                            .setView(android.widget.ScrollView(this@MainActivity).apply { addView(editor) })
+                            .setNegativeButton("إلغاء", null)
+                            .setPositiveButton("مراجعة Commit") { _, _ ->
+                                val updated = editor.text.toString()
+                                if (updated == original) {
+                                    toast("لم يتغير الملف")
+                                } else {
+                                    AlertDialog.Builder(this@MainActivity)
+                                        .setTitle("تأكيد رفع التعديل")
+                                        .setMessage("سيُحدّث الملف $path على الفرع $branch برسالة Commit جديدة. تأكد من مراجعة المحتوى.")
+                                        .setNegativeButton("إلغاء", null)
+                                        .setPositiveButton("رفع التعديل") { _, _ ->
+                                            runGitHubOperation("رفع $path") {
+                                                GitHubControlClient(token).updateTextFile(repository, path, branch, "chore: update $path via DevUtils", updated, sha)
+                                                "تم إرسال تحديث الملف إلى GitHub. Commit: chore: update $path via DevUtils"
+                                            }
+                                        }.show()
+                                }
+                            }.show()
+                    }.onFailure { error ->
+                        AlertDialog.Builder(this@MainActivity).setTitle("تعذر فتح الملف")
+                            .setMessage(error.message ?: "تحقق من المسار والرمز وصلاحية Contents.")
+                            .setPositiveButton("حسناً", null).show()
+                    }
+                }
+            }.show()
+    }
+
+    private fun copyToClipboard(value: String) {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText("DevUtils", value))
+        toast("تم نسخ النتيجة")
     }
 
     private fun showToolMode(checkedId: Int) {
