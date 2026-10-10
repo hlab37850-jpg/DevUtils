@@ -51,8 +51,8 @@ class GitHubControlClient(private val token: String) {
         return JSONObject(body)
     }
 
-    fun dispatchBuild(repository: String) {
-        val body = JSONObject().put("ref", "main").toString().toRequestBody(jsonType)
+    fun dispatchBuild(repository: String, branch: String) {
+        val body = JSONObject().put("ref", branch).toString().toRequestBody(jsonType)
         execute(request("https://api.github.com/repos/$repository/actions/workflows/build.yml/dispatches")
             .post(body).build())
     }
