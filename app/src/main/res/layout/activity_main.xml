@@ -19,13 +19,20 @@
             android:layout_height="wrap_content"
             android:checked="true"
             android:text="JSON"
-            android:paddingEnd="20dp" />
+            android:paddingEnd="12dp" />
 
         <RadioButton
             android:id="@+id/rbBase64"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Base64" />
+            android:text="Base64"
+            android:paddingEnd="12dp" />
+
+        <RadioButton
+            android:id="@+id/rbHash"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="مولد Hash" />
     </RadioGroup>
 
     <TextView
@@ -102,7 +109,24 @@
             style="?attr/materialButtonOutlinedStyle"/>
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/llHashActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/btnGenerateHash"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="توليد Hash"/>
+    </LinearLayout>
+
     <TextView
+        android:id="@+id/tvOutputLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="النتيجة:"
