@@ -471,9 +471,14 @@ class MainActivity : AppCompatActivity() {
                 putExtra("com.termux.RUN_COMMAND_ARGUMENTS", arrayOf("-lc", command))
                 if (workdir.isNotBlank()) putExtra("com.termux.RUN_COMMAND_WORKDIR", workdir)
                 putExtra("com.termux.RUN_COMMAND_BACKGROUND", false)
+                // Open a visible terminal session for foreground commands.
+                putExtra("com.termux.RUN_COMMAND_SESSION_ACTION", "0")
+                putExtra("com.termux.RUN_COMMAND_COMMAND_LABEL", "DevUtils command")
+                putExtra("com.termux.RUN_COMMAND_COMMAND_DESCRIPTION", "Command submitted from DevUtils after user confirmation.")
             }
+            // The terminal session and output are handled by Termux.
             startService(intent)
-            toast("أُرسل الأمر إلى Termux. راجع Termux لرؤية الناتج.")
+            toast("تم إرسال الطلب إلى Termux. إذا لم تظهر جلسة، راجع إعدادات الربط.")
         } catch (e: Exception) {
             AlertDialog.Builder(this)
                 .setTitle("تعذر تشغيل الأمر")
@@ -488,12 +493,13 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("إعداد الربط مع Termux")
             .setMessage(
-                "1. ثبّت Termux من مصدر موثوق.\n" +
-                "2. افتح Termux ثم Settings.\n" +
-                "3. فعّل Allow external apps / السماح للتطبيقات الخارجية بتشغيل الأوامر، إذا كان الخيار متاحاً في نسختك.\n" +
-                "4. اسمح لـ DevUtils باستخدام إذن RUN_COMMAND عند طلبه.\n" +
-                "5. جرّب أمراً بسيطاً مثل: pwd\n\n" +
-                "ملاحظة: DevUtils لا يستقبل مخرجات الطرفية مباشرة في هذه المرحلة؛ ستظهر في Termux. لا تشغّل أوامر لا تفهمها."
+                "1. افتح Termux مرة واحدة وتأكد أنه يعمل.\n" +
+                "2. في Termux نفّذ الأمر التالي لتفعيل السماح للتطبيقات الخارجية:\n" +
+                "mkdir -p ~/.termux && (grep -q '^allow-external-apps' ~/.termux/termux.properties 2>/dev/null && sed -i 's/^allow-external-apps.*/allow-external-apps = true/' ~/.termux/termux.properties || printf '\\nallow-external-apps = true\\n' >> ~/.termux/termux.properties)\n" +
+                "3. أغلق Termux من التطبيقات الأخيرة ثم افتحه مجدداً.\n" +
+                "4. افتح إعدادات Android > التطبيقات > DevUtils > الأذونات، واسمح بإذن Run commands in Termux environment / RUN_COMMAND ضمن الأذونات الإضافية إن ظهر.\n" +
+                "5. ارجع إلى DevUtils وجرّب أمراً بسيطاً مثل pwd.\n\n" +
+                "مهم: قد تحتاج إلى منح Termux إذن الظهور فوق التطبيقات لتفتح جلسة الطرفية تلقائياً. المخرجات تظهر في Termux ولا تُعرض داخل DevUtils حالياً. لا تشغّل أوامر لا تفهمها."
             )
             .setPositiveButton("فتح Termux") { _, _ -> openTermux() }
             .setNegativeButton("إغلاق", null)
