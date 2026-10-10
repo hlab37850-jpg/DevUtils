@@ -569,7 +569,7 @@ class MainActivity : AppCompatActivity() {
                         if (runs.length() == 0) "لا توجد عمليات بناء لهذا الفرع."
                         else (0 until runs.length()).joinToString("\n\n") { i ->
                             val run = runs.getJSONObject(i)
-                            "العملية #${run.optInt("run_number")}\\nالحالة: ${run.optString("status")}\\nالنتيجة: ${run.optString("conclusion", "قيد التنفيذ")}\\n${run.optString("html_url")}"
+                            "العملية #${run.optInt("run_number")}\nالحالة: ${run.optString("status")}\nالنتيجة: ${run.optString("conclusion", "قيد التنفيذ")}\n${run.optString("html_url")}"
                         }
                     }
                     2 -> AlertDialog.Builder(this)
