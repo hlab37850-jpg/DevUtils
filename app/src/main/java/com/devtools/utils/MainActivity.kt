@@ -418,7 +418,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         runCatching { startActivity(launchIntent) }
-            .onFailure { toast("تعذر فتح Termux: \${it.message.orEmpty()}") }
+            .onFailure { toast("تعذر فتح Termux: ${it.message.orEmpty()}") }
     }
 
     private fun showTermuxCommandDialog() {
@@ -451,7 +451,7 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     AlertDialog.Builder(this)
                         .setTitle("تأكيد تنفيذ الأمر")
-                        .setMessage("الأمر:\n$command\n\nمجلد العمل:\n\${workdir.ifBlank { "(الافتراضي)" }}\n\nهل تريد إرساله إلى Termux؟")
+                        .setMessage("الأمر:\n$command\n\nمجلد العمل:\n${workdir.ifBlank { "(الافتراضي)" }}\n\nهل تريد إرساله إلى Termux؟")
                         .setNegativeButton("إلغاء", null)
                         .setPositiveButton("تنفيذ") { _, _ -> executeTermuxCommand(command, workdir) }
                         .show()
@@ -475,7 +475,7 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             AlertDialog.Builder(this)
                 .setTitle("تعذر تشغيل الأمر")
-                .setMessage("تحقق من تثبيت Termux، وتفعيل خيار السماح بتشغيل الأوامر الخارجية (Allow external apps)، ثم أعد المحاولة.\n\nالتفاصيل: \${e.message.orEmpty()}")
+                .setMessage("تحقق من تثبيت Termux، وتفعيل خيار السماح بتشغيل الأوامر الخارجية (Allow external apps)، ثم أعد المحاولة.\n\nالتفاصيل: ${e.message.orEmpty()}")
                 .setPositiveButton("إعدادات الربط") { _, _ -> showTermuxSetupHelp() }
                 .setNegativeButton("إغلاق", null)
                 .show()
@@ -500,7 +500,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun openWebPage(url: String) {
         runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
-            .onFailure { toast("تعذر فتح الرابط: \${it.message.orEmpty()}") }
+            .onFailure { toast("تعذر فتح الرابط: ${it.message.orEmpty()}") }
     }
 
     private fun showToolMode(checkedId: Int) {
