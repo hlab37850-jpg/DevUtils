@@ -15,12 +15,12 @@ class GitCommandConverterTool {
             val name = exportMatch.groupValues[1]
             val value = unquote(exportMatch.groupValues[2])
             return when (target) {
-                "powershell" -> "\$env:$name = \"$value\""
+                "powershell" -> "$" + "env:$name = \"$value\""
                 "fish" -> "set -gx $name \"$value\""
                 else -> "export $name=\"$value\""
             }
         }
-        val assignment = Regex("""^${'$'}env:([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(.*)$""").matchEntire(input)
+        val assignment = Regex("""^${'
         if (assignment != null) {
             val name = assignment.groupValues[1]
             val value = unquote(assignment.groupValues[2])
@@ -36,22 +36,8 @@ class GitCommandConverterTool {
             val value = unquote(fishSet.groupValues[2])
             return when (target) {
                 "bash" -> "export $name=\"$value\""
-                "powershell" -> "\$env:$name = \"$value\""
+                "powershell" -> "$" + "env:$name = \"$value\""
                 else -> input
-            }
-        }
-        if (source == "powershell") {
-            when {
-                input == "Get-ChildItem -Force" -> return "ls -la"
-                input == "Get-ChildItem" -> return "ls"
-                input.startsWith("Get-Content ") -> return "cat " + input.removePrefix("Get-Content ").trim()
-                input == "Get-Location" -> return "pwd"
-                input == "Clear-Host" -> return "clear"
-                input.startsWith("Remove-Item -Recurse -Force ") ->
-                    return "rm -rf " + input.removePrefix("Remove-Item -Recurse -Force ").trim()
-                input.startsWith("New-Item -ItemType Directory -Name ") ->
-                    return "mkdir " + input.removePrefix("New-Item -ItemType Directory -Name ").trim()
-                input.startsWith("git ") -> return input
             }
         }
         val args = input.split(Regex("\\s+"), limit = 2)
@@ -93,22 +79,8 @@ class GitCommandConverterTool {
             val value = unquote(fishSet.groupValues[2])
             return when (target) {
                 "bash" -> "export $name=\"$value\""
-                "powershell" -> "\$env:$name = \"$value\""
+                "powershell" -> "$" + "env:$name = \"$value\""
                 else -> input
-            }
-        }
-        if (source == "powershell") {
-            when {
-                input == "Get-ChildItem -Force" -> return "ls -la"
-                input == "Get-ChildItem" -> return "ls"
-                input.startsWith("Get-Content ") -> return "cat " + input.removePrefix("Get-Content ").trim()
-                input == "Get-Location" -> return "pwd"
-                input == "Clear-Host" -> return "clear"
-                input.startsWith("Remove-Item -Recurse -Force ") ->
-                    return "rm -rf " + input.removePrefix("Remove-Item -Recurse -Force ").trim()
-                input.startsWith("New-Item -ItemType Directory -Name ") ->
-                    return "mkdir " + input.removePrefix("New-Item -ItemType Directory -Name ").trim()
-                input.startsWith("git ") -> return input
             }
         }
         val args = input.split(Regex("\\s+"), limit = 2)
