@@ -5,7 +5,31 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <RadioGroup
+        android:id="@+id/rgMode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="12dp">
+
+        <RadioButton
+            android:id="@+id/rbJson"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="JSON"
+            android:paddingEnd="20dp" />
+
+        <RadioButton
+            android:id="@+id/rbBase64"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Base64" />
+    </RadioGroup>
+
     <TextView
+        android:id="@+id/tvToolTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="منسق JSON"
@@ -26,6 +50,7 @@
         android:padding="8dp"/>
 
     <LinearLayout
+        android:id="@+id/llJsonActions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -47,6 +72,33 @@
             android:layout_weight="1"
             android:layout_marginStart="4dp"
             android:text="مسح"
+            style="?attr/materialButtonOutlinedStyle"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/llBase64Actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/btnEncode"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="تشفير (Encode)"/>
+
+        <Button
+            android:id="@+id/btnDecode"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="فك تشفير (Decode)"
             style="?attr/materialButtonOutlinedStyle"/>
     </LinearLayout>
 
