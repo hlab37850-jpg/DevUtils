@@ -52,7 +52,35 @@
                 android:id="@+id/rbUuid"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="مولد UUID" />
+                android:text="مولد UUID"
+                android:paddingEnd="12dp" />
+
+            <RadioButton
+                android:id="@+id/rbRegex"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="مختبر Regex"
+                android:paddingEnd="12dp" />
+
+            <RadioButton
+                android:id="@+id/rbWordCounter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="عداد الكلمات"
+                android:paddingEnd="12dp" />
+
+            <RadioButton
+                android:id="@+id/rbCaseConverter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="محول النصوص"
+                android:paddingEnd="12dp" />
+
+            <RadioButton
+                android:id="@+id/rbDuplicateRemover"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="مزيل التكرارات" />
         </RadioGroup>
     </HorizontalScrollView>
 
@@ -75,6 +103,17 @@
         android:gravity="top|start"
         android:inputType="textMultiLine"
         android:background="@android:drawable/edit_text"
+        android:padding="8dp" />
+
+    <EditText
+        android:id="@+id/etRegexPattern"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="نمط Regex، مثال: \\d+"
+        android:singleLine="true"
+        android:inputType="text"
+        android:visibility="gone"
+        android:layout_marginTop="8dp"
         android:padding="8dp" />
 
     <LinearLayout
@@ -196,6 +235,107 @@
             style="?attr/materialButtonOutlinedStyle" />
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/llRegexActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/btnRegexTest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="اختبار" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/llWordStats"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/tvWordCount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="عدد الكلمات: 0"
+            android:padding="6dp" />
+
+        <TextView
+            android:id="@+id/tvCharCount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="عدد الأحرف: 0"
+            android:padding="6dp" />
+
+        <TextView
+            android:id="@+id/tvLineCount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="عدد الأسطر: 0"
+            android:padding="6dp" />
+
+        <TextView
+            android:id="@+id/tvParagraphCount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="عدد الفقرات: 0"
+            android:padding="6dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/llCaseActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/btnCamelCase"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="camelCase" />
+
+        <Button
+            android:id="@+id/btnSnakeCase"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="snake_case" />
+
+        <Button
+            android:id="@+id/btnPascalCase"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="PascalCase" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/llDuplicateActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/btnRemoveDuplicates"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="إزالة التكرارات" />
+    </LinearLayout>
+
     <TextView
         android:id="@+id/tvOutputLabel"
         android:layout_width="wrap_content"
@@ -205,6 +345,7 @@
         android:layout_marginBottom="4dp" />
 
     <ScrollView
+        android:id="@+id/svOutput"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
