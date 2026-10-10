@@ -5,6 +5,18 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <LinearLayout android:id="@+id/topToolbar" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="10dp">
+        <TextView android:id="@+id/tvAppTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="DevUtils" android:textSize="22sp" android:textStyle="bold" android:gravity="center_vertical" android:paddingBottom="4dp" />
+        <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:scrollbars="none">
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
+                <Button android:id="@+id/btnToggleTheme" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="◐ الوضع" />
+                <Button android:id="@+id/btnHistory" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="◷ السجل" />
+                <Button android:id="@+id/btnExportSettings" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="تصدير" />
+                <Button android:id="@+id/btnImportSettings" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="استيراد" />
+            </LinearLayout>
+        </HorizontalScrollView>
+    </LinearLayout>
+
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -441,6 +453,10 @@
         android:text="النتيجة:"
         android:textStyle="bold"
         android:layout_marginBottom="4dp" />
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="end">
+        <Button android:id="@+id/btnShareOutput" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="مشاركة النتيجة" style="?attr/materialButtonOutlinedStyle" />
+    </LinearLayout>
 
     <ScrollView
         android:id="@+id/svOutput"

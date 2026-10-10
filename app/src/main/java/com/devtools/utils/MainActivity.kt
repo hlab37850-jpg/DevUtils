@@ -3,6 +3,8 @@ package com.devtools.utils
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -10,11 +12,19 @@ import android.util.Base64
 import android.view.View
 import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import androidx.appcompat.app.AppCompatActivity
 import com.devtools.utils.databinding.ActivityMainBinding
+import com.devtools.utils.data.AppDatabase
+import com.devtools.utils.data.HistoryEntity
 import com.devtools.utils.tools.CaseConverterTool
 import com.devtools.utils.tools.CommitMessageTool
 import com.devtools.utils.tools.GitCommandConverterTool
@@ -35,6 +45,11 @@ import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
+    private lateinit var database: AppDatabase
+    private lateinit var exportSettingsLauncher: ActivityResultLauncher<String>
+    private lateinit var importSettingsLauncher: ActivityResultLauncher<Array<String>>
+    private val settingsPrefsName = "devutils_settings"
+    private val settingsModeKey = "night_mode"
 
     private val regexTool = RegexTool()
     private val wordCounterTool = WordCounterTool()
@@ -49,14 +64,25 @@ class MainActivity : AppCompatActivity() {
     private val dateDiffCalculatorTool = DateDiffCalculatorTool()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val savedMode = getSharedPreferences(settingsPrefsName, MODE_PRIVATE).getInt(settingsModeKey, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        AppCompatDelegate.setDefaultNightMode(savedMode)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        database = AppDatabase.getInstance(this)
+        exportSettingsLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri -> if (uri != null) exportSettings(uri) }
+        importSettingsLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) importSettings(uri) }
         setupUI()
         showToolMode(binding.rgMode.checkedRadioButtonId)
     }
 
     private fun setupUI() {
+        binding.btnToggleTheme.setOnClickListener { toggleNightMode() }
+        binding.btnHistory.setOnClickListener { showHistory() }
+        binding.btnShareOutput.setOnClickListener { shareOutput() }
+        binding.btnExportSettings.setOnClickListener { exportSettingsLauncher.launch("devutils-settings.json") }
+        binding.btnImportSettings.setOnClickListener { importSettingsLauncher.launch(arrayOf("application/json", "text/json", "text/plain")) }
+        updateThemeButton()
         binding.rgMode.setOnCheckedChangeListener { _, checkedId ->
             showToolMode(checkedId)
         }
@@ -71,6 +97,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 val jsonObject = JSONObject(inputJson)
                 binding.etOutput.text = jsonObject.toString(4)
+                saveHistory("JSON", inputJson, binding.etOutput.text.toString())
                 toast("تم التنسيق بنجاح")
             } catch (e: Exception) {
                 binding.etOutput.text = "خطأ في تنسيق JSON: \n${e.message}"
@@ -90,6 +117,7 @@ class MainActivity : AppCompatActivity() {
                 Base64.NO_WRAP
             )
             binding.etOutput.text = encoded
+            saveHistory("Base64 Encode", input, encoded)
             toast("تم التشفير بنجاح")
         }
 
@@ -103,6 +131,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 val decodedBytes = Base64.decode(input, Base64.DEFAULT)
                 binding.etOutput.text = String(decodedBytes, StandardCharsets.UTF_8)
+                saveHistory("Base64 Decode", input, binding.etOutput.text.toString())
                 toast("تم فك التشفير بنجاح")
             } catch (e: IllegalArgumentException) {
                 binding.etOutput.text = "خطأ: نص Base64 غير صالح."
@@ -123,6 +152,7 @@ class MainActivity : AppCompatActivity() {
                 val sha1 = MessageDigest.getInstance("SHA-1").digest(bytes).toHex()
                 val sha256 = MessageDigest.getInstance("SHA-256").digest(bytes).toHex()
                 binding.etOutput.text = "MD5:\n$md5\n\nSHA-1:\n$sha1\n\nSHA-256:\n$sha256"
+                saveHistory("Hash", input, binding.etOutput.text.toString())
                 toast("تم توليد Hash بنجاح")
             } catch (e: Exception) {
                 binding.etOutput.text = "تعذر توليد Hash: ${e.message.orEmpty()}"
@@ -139,6 +169,7 @@ class MainActivity : AppCompatActivity() {
             }
             try {
                 binding.etOutput.text = URLEncoder.encode(input, StandardCharsets.UTF_8.name())
+                saveHistory("URL Encode", input, binding.etOutput.text.toString())
                 toast("تم تشفير URL بنجاح")
             } catch (e: Exception) {
                 binding.etOutput.text = "تعذر تشفير URL: ${e.message.orEmpty()}"
@@ -155,6 +186,7 @@ class MainActivity : AppCompatActivity() {
             }
             try {
                 binding.etOutput.text = URLDecoder.decode(input, StandardCharsets.UTF_8.name())
+                saveHistory("URL Decode", input, binding.etOutput.text.toString())
                 toast("تم فك تشفير URL بنجاح")
             } catch (e: Exception) {
                 binding.etOutput.text = "تعذر فك تشفير URL: ${e.message.orEmpty()}"
@@ -165,6 +197,7 @@ class MainActivity : AppCompatActivity() {
         // Existing UUID generator and clipboard action.
         binding.btnGenerateUuid.setOnClickListener {
             binding.etOutput.text = UUID.randomUUID().toString()
+            saveHistory("UUID", "", binding.etOutput.text.toString())
             toast("تم توليد UUID جديد")
         }
         binding.btnCopyUuid.setOnClickListener {
@@ -182,6 +215,7 @@ class MainActivity : AppCompatActivity() {
             val pattern = binding.etRegexPattern.text.toString()
             try {
                 binding.etOutput.text = regexTool.execute(input, pattern)
+                saveHistory("Regex", "Pattern: $pattern\n$input", binding.etOutput.text.toString())
                 toast("اكتمل اختبار Regex")
             } catch (e: IllegalArgumentException) {
                 binding.etOutput.text = "خطأ في نمط Regex: ${e.message.orEmpty()}"
@@ -229,6 +263,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     binding.etOutput.text = result
+                    if (!result.startsWith("خطأ الشبكة:")) saveHistory("HTTP", "$method $url\n${body.orEmpty()}", result)
                     if (result.startsWith("خطأ الشبكة:")) toast("تعذر الاتصال. تحقق من الإنترنت والرابط.")
                 } catch (e: Exception) {
                     binding.etOutput.text = "خطأ الشبكة: ${e.message.orEmpty()}"
@@ -244,6 +279,7 @@ class MainActivity : AppCompatActivity() {
         binding.btnJwtDecode.setOnClickListener {
             try {
                 binding.etOutput.text = jwtTool.decodeJwt(binding.etJwtToken.text.toString().trim())
+                saveHistory("JWT", binding.etJwtToken.text.toString().trim(), binding.etOutput.text.toString())
                 toast("تم فك Payload بنجاح")
             } catch (e: Exception) {
                 binding.etOutput.text = "تعذر تحليل JWT: ${e.message.orEmpty()}"
@@ -253,6 +289,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnGenerateMock.setOnClickListener {
             binding.etOutput.text = mockDataTool.generateMockData()
+            saveHistory("Mock Data", "", binding.etOutput.text.toString())
             toast("تم توليد بيانات تجريبية")
         }
 
@@ -266,6 +303,7 @@ class MainActivity : AppCompatActivity() {
                     description = binding.etCommitDescription.text.toString(),
                     body = binding.etCommitBody.text.toString()
                 )
+                saveHistory("Commit Message", "${binding.spCommitType.selectedItem} ${binding.etCommitScope.text} ${binding.etCommitDescription.text}\n${binding.etCommitBody.text}", binding.etOutput.text.toString())
                 toast("تم توليد رسالة Commit")
             } catch (e: IllegalArgumentException) {
                 binding.etOutput.text = "تعذر توليد الرسالة: ${e.message.orEmpty()}"
@@ -282,6 +320,7 @@ class MainActivity : AppCompatActivity() {
                     fromShell = binding.spShellFrom.selectedItem.toString(),
                     toShell = binding.spShellTo.selectedItem.toString()
                 )
+                saveHistory("Git Command", binding.etGitCommand.text.toString(), binding.etOutput.text.toString())
                 toast("تم تحويل الأمر")
             } catch (e: IllegalArgumentException) {
                 binding.etOutput.text = "تعذر تحويل الأمر: ${e.message.orEmpty()}"
@@ -294,6 +333,7 @@ class MainActivity : AppCompatActivity() {
         binding.btnGenerateGitignore.setOnClickListener {
             try {
                 binding.etOutput.text = gitignoreGeneratorTool.generateGitignore(binding.spGitignoreType.selectedItem.toString())
+                saveHistory("Gitignore", binding.spGitignoreType.selectedItem.toString(), binding.etOutput.text.toString())
                 toast("تم توليد قالب .gitignore")
             } catch (e: IllegalArgumentException) {
                 binding.etOutput.text = "تعذر توليد القالب: ${e.message.orEmpty()}"
@@ -316,6 +356,7 @@ class MainActivity : AppCompatActivity() {
                 binding.tvDiffDays.text = "الأيام: ${diff.getValue("days")}"
                 binding.tvDiffTotalDays.text = "إجمالي الأيام: ${diff.getValue("totalDays")}"
                 binding.etOutput.text = "السنوات: ${diff.getValue("years")}\nالأشهر: ${diff.getValue("months")}\nالأيام: ${diff.getValue("days")}\nإجمالي الأيام: ${diff.getValue("totalDays")}"
+                saveHistory("Date Difference", "${binding.etStartDate.text} → ${binding.etEndDate.text}", binding.etOutput.text.toString())
                 toast("تم حساب الفرق بين التاريخين")
             } catch (e: IllegalArgumentException) {
                 toast(e.message ?: "تاريخ غير صالح. استخدم YYYY-MM-DD")
@@ -332,6 +373,7 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             binding.etOutput.text = duplicateRemoverTool.execute(input)
+            saveHistory("Duplicate Remover", input, binding.etOutput.text.toString())
             toast("تمت إزالة الأسطر المكررة")
         }
 
@@ -433,6 +475,84 @@ class MainActivity : AppCompatActivity() {
         if (isWordCounter) updateWordStats(binding.etInput.text.toString())
     }
 
+    private fun saveHistory(toolName: String, input: String, output: String) {
+        if (output.isBlank() || output.startsWith("خطأ") || output.startsWith("تعذر")) return
+        lifecycleScope.launch(Dispatchers.IO) {
+            runCatching { database.historyDao().insert(HistoryEntity(toolName = toolName, input = input, output = output, timestamp = System.currentTimeMillis())) }
+        }
+    }
+
+    private fun showHistory() {
+        lifecycleScope.launch {
+            val entries = withContext(Dispatchers.IO) { database.historyDao().getRecentHistory() }
+            if (entries.isEmpty()) {
+                AlertDialog.Builder(this@MainActivity).setTitle("سجل العمليات").setMessage("لا توجد عمليات محفوظة حتى الآن.").setPositiveButton("حسناً", null).show()
+                return@launch
+            }
+            val labels = entries.map { entry -> "${entry.toolName} • ${entry.output.replace("\\n", " ").take(70)}" }.toTypedArray()
+            AlertDialog.Builder(this@MainActivity).setTitle("آخر ${entries.size} عملية")
+                .setItems(labels) { _, index ->
+                    val entry = entries[index]
+                    AlertDialog.Builder(this@MainActivity)
+                        .setTitle("${entry.toolName} • ${java.text.DateFormat.getDateTimeInstance().format(java.util.Date(entry.timestamp))}")
+                        .setMessage("المدخل:\\n${entry.input}\\n\\nالنتيجة:\\n${entry.output}")
+                        .setPositiveButton("إغلاق", null)
+                        .setNeutralButton("مشاركة") { _, _ -> shareText(entry.output) }.show()
+                }
+                .setNegativeButton("إغلاق", null)
+                .setNeutralButton("مسح السجل") { _, _ -> lifecycleScope.launch(Dispatchers.IO) { database.historyDao().deleteAll() }; toast("تم مسح السجل") }
+                .show()
+        }
+    }
+
+    private fun shareOutput() {
+        val output = binding.etOutput.text.toString()
+        if (output.isBlank()) { toast("لا توجد نتيجة لمشاركتها"); return }
+        shareText(output)
+    }
+
+    private fun shareText(text: String) {
+        val intent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }
+        startActivity(Intent.createChooser(intent, "مشاركة النتيجة"))
+    }
+
+    private fun toggleNightMode() {
+        val prefs = getSharedPreferences(settingsPrefsName, MODE_PRIVATE)
+        val current = prefs.getInt(settingsModeKey, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        val next = when (current) { AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM -> AppCompatDelegate.MODE_NIGHT_YES; AppCompatDelegate.MODE_NIGHT_YES -> AppCompatDelegate.MODE_NIGHT_NO; else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM }
+        prefs.edit().putInt(settingsModeKey, next).apply()
+        AppCompatDelegate.setDefaultNightMode(next)
+        updateThemeButton()
+    }
+
+    private fun updateThemeButton() {
+        val mode = getSharedPreferences(settingsPrefsName, MODE_PRIVATE).getInt(settingsModeKey, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        binding.btnToggleTheme.text = when (mode) { AppCompatDelegate.MODE_NIGHT_YES -> "☀ الوضع الداكن"; AppCompatDelegate.MODE_NIGHT_NO -> "☾ الوضع الفاتح"; else -> "◐ تلقائي" }
+    }
+
+    private fun exportSettings(uri: Uri) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val prefs = getSharedPreferences(settingsPrefsName, MODE_PRIVATE)
+            val json = JSONObject().put("app", "DevUtils").put("version", 1).put("nightMode", prefs.getInt(settingsModeKey, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)).toString(2)
+            val success = runCatching { contentResolver.openOutputStream(uri)?.bufferedWriter(Charsets.UTF_8)?.use { it.write(json) } ?: error("تعذر فتح الملف للكتابة") }.isSuccess
+            withContext(Dispatchers.Main) { toast(if (success) "تم تصدير الإعدادات" else "تعذر تصدير الإعدادات") }
+        }
+    }
+
+    private fun importSettings(uri: Uri) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val result = runCatching {
+                val text = contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() } ?: error("تعذر قراءة الملف")
+                val json = JSONObject(text)
+                require(json.optString("app") == "DevUtils") { "هذا الملف ليس إعدادات DevUtils" }
+                val mode = json.optInt("nightMode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                require(mode == AppCompatDelegate.MODE_NIGHT_YES || mode == AppCompatDelegate.MODE_NIGHT_NO || mode == AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM) { "قيمة الوضع الليلي غير صالحة" }
+                getSharedPreferences(settingsPrefsName, MODE_PRIVATE).edit().putInt(settingsModeKey, mode).apply()
+                mode
+            }
+            withContext(Dispatchers.Main) { result.onSuccess { mode -> AppCompatDelegate.setDefaultNightMode(mode); updateThemeButton(); toast("تم استيراد الإعدادات") }.onFailure { error -> toast(error.message ?: "تعذر استيراد الإعدادات") } }
+        }
+    }
     private fun updateWordStats(input: String) {
         val stats = wordCounterTool.execute(input)
         binding.tvWordCount.text = "عدد الكلمات: ${stats.words}"
@@ -449,6 +569,7 @@ class MainActivity : AppCompatActivity() {
         }
         try {
             binding.etOutput.text = caseConverterTool.execute(input, mode)
+            saveHistory("Case Converter", "$mode\n$input", binding.etOutput.text.toString())
             toast("تم تحويل النص بنجاح")
         } catch (e: Exception) {
             binding.etOutput.text = "تعذر تحويل النص: ${e.message.orEmpty()}"
