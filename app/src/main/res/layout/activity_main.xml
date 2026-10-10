@@ -11,6 +11,7 @@
             <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
                 <Button android:id="@+id/btnToggleTheme" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="◐ الوضع" />
                 <Button android:id="@+id/btnHistory" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="◷ السجل" />
+                <Button android:id="@+id/btnDeveloperCenter" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="مركز التطوير" />
                 <Button android:id="@+id/btnExportSettings" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="تصدير" />
                 <Button android:id="@+id/btnImportSettings" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="استيراد" />
             </LinearLayout>
