@@ -5,35 +5,56 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <RadioGroup
-        android:id="@+id/rgMode"
+    <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
+        android:fillViewport="false"
+        android:scrollbars="none"
         android:layout_marginBottom="12dp">
 
-        <RadioButton
-            android:id="@+id/rbJson"
+        <RadioGroup
+            android:id="@+id/rgMode"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="JSON"
-            android:paddingEnd="12dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-        <RadioButton
-            android:id="@+id/rbBase64"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Base64"
-            android:paddingEnd="12dp" />
+            <RadioButton
+                android:id="@+id/rbJson"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="JSON"
+                android:paddingEnd="12dp" />
 
-        <RadioButton
-            android:id="@+id/rbHash"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="مولد Hash" />
-    </RadioGroup>
+            <RadioButton
+                android:id="@+id/rbBase64"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Base64"
+                android:paddingEnd="12dp" />
+
+            <RadioButton
+                android:id="@+id/rbHash"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="مولد Hash"
+                android:paddingEnd="12dp" />
+
+            <RadioButton
+                android:id="@+id/rbUrl"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="محول URL"
+                android:paddingEnd="12dp" />
+
+            <RadioButton
+                android:id="@+id/rbUuid"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="مولد UUID" />
+        </RadioGroup>
+    </HorizontalScrollView>
 
     <TextView
         android:id="@+id/tvToolTitle"
@@ -43,7 +64,7 @@
         android:textSize="24sp"
         android:textStyle="bold"
         android:layout_gravity="center"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="16dp" />
 
     <EditText
         android:id="@+id/etInput"
@@ -54,7 +75,7 @@
         android:gravity="top|start"
         android:inputType="textMultiLine"
         android:background="@android:drawable/edit_text"
-        android:padding="8dp"/>
+        android:padding="8dp" />
 
     <LinearLayout
         android:id="@+id/llJsonActions"
@@ -70,7 +91,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="4dp"
-            android:text="تنسيق"/>
+            android:text="تنسيق" />
 
         <Button
             android:id="@+id/btnClear"
@@ -79,7 +100,7 @@
             android:layout_weight="1"
             android:layout_marginStart="4dp"
             android:text="مسح"
-            style="?attr/materialButtonOutlinedStyle"/>
+            style="?attr/materialButtonOutlinedStyle" />
     </LinearLayout>
 
     <LinearLayout
@@ -97,7 +118,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="4dp"
-            android:text="تشفير (Encode)"/>
+            android:text="تشفير (Encode)" />
 
         <Button
             android:id="@+id/btnDecode"
@@ -106,7 +127,7 @@
             android:layout_weight="1"
             android:layout_marginStart="4dp"
             android:text="فك تشفير (Decode)"
-            style="?attr/materialButtonOutlinedStyle"/>
+            style="?attr/materialButtonOutlinedStyle" />
     </LinearLayout>
 
     <LinearLayout
@@ -122,7 +143,57 @@
             android:id="@+id/btnGenerateHash"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="توليد Hash"/>
+            android:text="توليد Hash" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/llUrlActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/btnUrlEncode"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="تشفير URL" />
+
+        <Button
+            android:id="@+id/btnUrlDecode"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="فك تشفير URL"
+            style="?attr/materialButtonOutlinedStyle" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/llUuidActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/btnGenerateUuid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="توليد UUID جديد" />
+
+        <Button
+            android:id="@+id/btnCopyUuid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="نسخ للحافظة"
+            style="?attr/materialButtonOutlinedStyle" />
     </LinearLayout>
 
     <TextView
@@ -131,7 +202,7 @@
         android:layout_height="wrap_content"
         android:text="النتيجة:"
         android:textStyle="bold"
-        android:layout_marginBottom="4dp"/>
+        android:layout_marginBottom="4dp" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -145,6 +216,6 @@
             android:background="#F0F0F0"
             android:padding="8dp"
             android:textIsSelectable="true"
-            android:fontFamily="monospace"/>
+            android:fontFamily="monospace" />
     </ScrollView>
 </LinearLayout>
