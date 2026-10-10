@@ -30,9 +30,9 @@ android {
     buildFeatures {
         viewBinding = true
     }
-    kapt {
-        correctErrorTypes = true
-    }
+}
+kapt {
+    correctErrorTypes = true
 }
 dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
