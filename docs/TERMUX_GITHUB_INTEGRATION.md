@@ -4,10 +4,21 @@ This feature is being introduced on `feature/termux-github-control`; it does not
 
 ## Termux setup
 1. Install Termux from a trusted source.
-2. In Termux settings, enable the option that allows external apps to run commands, if provided by your version.
-3. Open DevUtils → **مركز التطوير** → **تشغيل أمر في Termux**.
-4. Review the command and working directory carefully, then confirm. Start with a harmless command such as `pwd`.
-5. Command output is currently shown in Termux. DevUtils does not yet stream terminal output back into its own screen.
+2. In Termux, run the following once to enable the required property:
+   ```sh
+   mkdir -p ~/.termux
+   if grep -q '^allow-external-apps' ~/.termux/termux.properties 2>/dev/null; then
+     sed -i 's/^allow-external-apps.*/allow-external-apps = true/' ~/.termux/termux.properties
+   else
+     printf '\\nallow-external-apps = true\\n' >> ~/.termux/termux.properties
+   fi
+   ```
+3. Fully close and reopen Termux.
+4. In Android Settings → Apps → DevUtils → Permissions, grant **Run commands in Termux environment / RUN_COMMAND** under additional permissions if shown.
+5. Open DevUtils → **مركز التطوير** → **تشغيل أمر في Termux**.
+6. Review the command and working directory carefully, then confirm. Start with a harmless command such as `pwd`.
+7. If a terminal session does not open automatically, allow Termux to display over other apps in Android settings. Commands sent to external shared storage may also require Termux storage access.
+8. Command output is currently shown in Termux. DevUtils does not yet stream terminal output back into its own screen.
 
 The bridge uses Termux's `com.termux.RUN_COMMAND` service and requests `com.termux.permission.RUN_COMMAND`. Availability depends on the installed Termux version and its external-command setting.
 
