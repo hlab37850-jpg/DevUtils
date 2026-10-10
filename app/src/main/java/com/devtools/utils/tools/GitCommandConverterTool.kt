@@ -40,6 +40,20 @@ class GitCommandConverterTool {
                 else -> input
             }
         }
+        if (source == "powershell") {
+            when {
+                input == "Get-ChildItem -Force" -> return "ls -la"
+                input == "Get-ChildItem" -> return "ls"
+                input.startsWith("Get-Content ") -> return "cat " + input.removePrefix("Get-Content ").trim()
+                input == "Get-Location" -> return "pwd"
+                input == "Clear-Host" -> return "clear"
+                input.startsWith("Remove-Item -Recurse -Force ") ->
+                    return "rm -rf " + input.removePrefix("Remove-Item -Recurse -Force ").trim()
+                input.startsWith("New-Item -ItemType Directory -Name ") ->
+                    return "mkdir " + input.removePrefix("New-Item -ItemType Directory -Name ").trim()
+                input.startsWith("git ") -> return input
+            }
+        }
         val args = input.split(Regex("\\s+"), limit = 2)
         val supported = input == "ls -la" || input == "ls -l" || input == "ls" || input == "pwd" ||
             input == "clear" || input.startsWith("cat ") || input.startsWith("mkdir ") ||
