@@ -15,12 +15,69 @@ class GitCommandConverterTool {
             val name = exportMatch.groupValues[1]
             val value = unquote(exportMatch.groupValues[2])
             return when (target) {
-                "powershell" -> "$" + "env:$name = \"$value\""
+                "powershell" -> "\$env:$name = \"$value\""
                 "fish" -> "set -gx $name \"$value\""
                 else -> "export $name=\"$value\""
             }
         }
-        val assignment = Regex("""^\$env:([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$""").matchEntire(input)
+        val assignment = Regex("""^${'.matchEntire(input)
+        if (assignment != null) {
+            val name = assignment.groupValues[1]
+            val value = unquote(assignment.groupValues[2])
+            return when (target) {
+                "bash" -> "export $name=\"$value\""
+                "fish" -> "set -gx $name \"$value\""
+                else -> input
+            }
+        }
+        val fishSet = Regex("""^set\s+-g?x\s+([A-Za-z_][A-Za-z0-9_]*)\s+(.+)$""").matchEntire(input)
+        if (fishSet != null && source == "fish") {
+            val name = fishSet.groupValues[1]
+            val value = unquote(fishSet.groupValues[2])
+            return when (target) {
+                "bash" -> "export $name=\"$value\""
+                "powershell" -> "$" + "env:$name = \"$value\""
+                else -> input
+            }
+        }
+        if (source == "powershell") {
+            when {
+                input == "Get-ChildItem -Force" -> return "ls -la"
+                input == "Get-ChildItem" -> return "ls"
+                input.startsWith("Get-Content ") -> return "cat " + input.removePrefix("Get-Content ").trim()
+                input == "Get-Location" -> return "pwd"
+                input == "Clear-Host" -> return "clear"
+                input.startsWith("Remove-Item -Recurse -Force ") ->
+                    return "rm -rf " + input.removePrefix("Remove-Item -Recurse -Force ").trim()
+                input.startsWith("New-Item -ItemType Directory -Name ") ->
+                    return "mkdir " + input.removePrefix("New-Item -ItemType Directory -Name ").trim()
+                input.startsWith("git ") -> return input
+            }
+        }
+        val args = input.split(Regex("\\s+"), limit = 2)
+        val supported = input == "ls -la" || input == "ls -l" || input == "ls" || input == "pwd" ||
+            input == "clear" || input.startsWith("cat ") || input.startsWith("mkdir ") ||
+            input.startsWith("rm -rf ") || input.startsWith("git ")
+        require(supported) { "هذا الأمر غير مدعوم للتحويل حالياً." }
+        return when (args[0]) {
+            "ls" -> when {
+                input == "ls -la" && target == "powershell" -> "Get-ChildItem -Force"
+                input == "ls -l" && target == "powershell" -> "Get-ChildItem"
+                target == "powershell" -> "Get-ChildItem"
+                else -> input
+            }
+            "cat" -> if (target == "powershell") "Get-Content ${args.getOrElse(1) { "" }}" else input
+            "pwd" -> if (target == "powershell") "Get-Location" else input
+            "clear" -> if (target == "powershell") "Clear-Host" else input
+            "mkdir" -> if (target == "powershell") "New-Item -ItemType Directory -Name ${args.getOrElse(1) { "" }}" else input
+            "rm" -> if (target == "powershell") "Remove-Item -Recurse -Force ${args.getOrElse(1) { "" }}" else input
+            "git" -> input
+            else -> input
+        }
+    }
+    private fun unquote(value: String): String = value.trim().removeSurrounding("\"").removeSurrounding("'")
+}
+}env:([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$""").matchEntire(input)
         if (assignment != null) {
             val name = assignment.groupValues[1]
             val value = unquote(assignment.groupValues[2])
