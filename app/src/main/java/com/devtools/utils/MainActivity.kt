@@ -79,6 +79,7 @@ class MainActivity : AppCompatActivity() {
     private fun setupUI() {
         binding.btnToggleTheme.setOnClickListener { toggleNightMode() }
         binding.btnHistory.setOnClickListener { showHistory() }
+        binding.btnDeveloperCenter.setOnClickListener { showDeveloperCenter() }
         binding.btnShareOutput.setOnClickListener { shareOutput() }
         binding.btnExportSettings.setOnClickListener { exportSettingsLauncher.launch("devutils-settings.json") }
         binding.btnImportSettings.setOnClickListener { importSettingsLauncher.launch(arrayOf("application/json", "text/json", "text/plain")) }
@@ -381,6 +382,125 @@ class MainActivity : AppCompatActivity() {
             binding.etInput.text.clear()
             binding.etOutput.text = ""
         }
+    }
+
+    private fun showDeveloperCenter() {
+        val options = arrayOf(
+            "فتح Termux",
+            "تشغيل أمر في Termux",
+            "فتح مستودع DevUtils على GitHub",
+            "متابعة بناء APK (GitHub Actions)",
+            "تعليمات إعداد الربط"
+        )
+        AlertDialog.Builder(this)
+            .setTitle("مركز التطوير")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> openTermux()
+                    1 -> showTermuxCommandDialog()
+                    2 -> openWebPage("https://github.com/hlab37850-jpg/DevUtils")
+                    3 -> openWebPage("https://github.com/hlab37850-jpg/DevUtils/actions")
+                    4 -> showTermuxSetupHelp()
+                }
+            }
+            .setNegativeButton("إغلاق", null)
+            .show()
+    }
+
+    private fun openTermux() {
+        val launchIntent = packageManager.getLaunchIntentForPackage("com.termux")
+        if (launchIntent == null) {
+            AlertDialog.Builder(this)
+                .setTitle("Termux غير مثبت")
+                .setMessage("ثبّت Termux من مصدره الموثوق، ثم ارجع إلى مركز التطوير.")
+                .setPositiveButton("حسناً", null)
+                .show()
+            return
+        }
+        runCatching { startActivity(launchIntent) }
+            .onFailure { toast("تعذر فتح Termux: \${it.message.orEmpty()}") }
+    }
+
+    private fun showTermuxCommandDialog() {
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(40, 12, 40, 0)
+        }
+        val commandInput = android.widget.EditText(this).apply {
+            hint = "الأمر، مثال: pwd أو git status"
+            minLines = 2
+            gravity = android.view.Gravity.TOP or android.view.Gravity.START
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        }
+        val workdirInput = android.widget.EditText(this).apply {
+            hint = "مجلد العمل (اختياري)"
+            setSingleLine(true)
+            setText("/data/data/com.termux/files/home")
+        }
+        container.addView(commandInput)
+        container.addView(workdirInput)
+        AlertDialog.Builder(this)
+            .setTitle("تشغيل أمر في Termux")
+            .setMessage("راجع الأمر قبل التشغيل. سينفَّذ بصلاحيات مستخدم Termux، وقد يغيّر الملفات أو النظام.")
+            .setView(container)
+            .setPositiveButton("مراجعة وتشغيل") { _, _ ->
+                val command = commandInput.text.toString().trim()
+                val workdir = workdirInput.text.toString().trim()
+                if (command.isBlank()) {
+                    toast("أدخل الأمر أولاً")
+                } else {
+                    AlertDialog.Builder(this)
+                        .setTitle("تأكيد تنفيذ الأمر")
+                        .setMessage("الأمر:\n$command\n\nمجلد العمل:\n\${workdir.ifBlank { "(الافتراضي)" }}\n\nهل تريد إرساله إلى Termux؟")
+                        .setNegativeButton("إلغاء", null)
+                        .setPositiveButton("تنفيذ") { _, _ -> executeTermuxCommand(command, workdir) }
+                        .show()
+                }
+            }
+            .setNegativeButton("إلغاء", null)
+            .show()
+    }
+
+    private fun executeTermuxCommand(command: String, workdir: String) {
+        try {
+            val intent = Intent("com.termux.RUN_COMMAND").apply {
+                setClassName("com.termux", "com.termux.app.RunCommandService")
+                putExtra("com.termux.RUN_COMMAND_PATH", "/data/data/com.termux/files/usr/bin/bash")
+                putExtra("com.termux.RUN_COMMAND_ARGUMENTS", arrayOf("-lc", command))
+                if (workdir.isNotBlank()) putExtra("com.termux.RUN_COMMAND_WORKDIR", workdir)
+                putExtra("com.termux.RUN_COMMAND_BACKGROUND", false)
+            }
+            startService(intent)
+            toast("أُرسل الأمر إلى Termux. راجع Termux لرؤية الناتج.")
+        } catch (e: Exception) {
+            AlertDialog.Builder(this)
+                .setTitle("تعذر تشغيل الأمر")
+                .setMessage("تحقق من تثبيت Termux، وتفعيل خيار السماح بتشغيل الأوامر الخارجية (Allow external apps)، ثم أعد المحاولة.\n\nالتفاصيل: \${e.message.orEmpty()}")
+                .setPositiveButton("إعدادات الربط") { _, _ -> showTermuxSetupHelp() }
+                .setNegativeButton("إغلاق", null)
+                .show()
+        }
+    }
+
+    private fun showTermuxSetupHelp() {
+        AlertDialog.Builder(this)
+            .setTitle("إعداد الربط مع Termux")
+            .setMessage(
+                "1. ثبّت Termux من مصدر موثوق.\n" +
+                "2. افتح Termux ثم Settings.\n" +
+                "3. فعّل Allow external apps / السماح للتطبيقات الخارجية بتشغيل الأوامر، إذا كان الخيار متاحاً في نسختك.\n" +
+                "4. اسمح لـ DevUtils باستخدام إذن RUN_COMMAND عند طلبه.\n" +
+                "5. جرّب أمراً بسيطاً مثل: pwd\n\n" +
+                "ملاحظة: DevUtils لا يستقبل مخرجات الطرفية مباشرة في هذه المرحلة؛ ستظهر في Termux. لا تشغّل أوامر لا تفهمها."
+            )
+            .setPositiveButton("فتح Termux") { _, _ -> openTermux() }
+            .setNegativeButton("إغلاق", null)
+            .show()
+    }
+
+    private fun openWebPage(url: String) {
+        runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+            .onFailure { toast("تعذر فتح الرابط: \${it.message.orEmpty()}") }
     }
 
     private fun showToolMode(checkedId: Int) {
